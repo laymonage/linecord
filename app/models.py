@@ -18,7 +18,7 @@ class AndroidMetadata(models.Model):
 
 
 class Chat(models.Model):
-    chat_id = models.TextField(primary_key=True, blank=True, null=True)
+    chat_id = models.TextField(primary_key=True, blank=True)
     chat_name = models.TextField(blank=True, null=True)
     owner = models.ForeignKey(
         "app.Contacts",
@@ -124,15 +124,14 @@ class ChatMember(models.Model):
     class Meta:
         managed = False
         db_table = "chat_member"
-        unique_together = (("chat_id", "mid"),)
+        unique_together = (("chat_id", "contact"),)
 
 
 class ChatNotification(models.Model):
-    chat = models.ForeignKey(
+    chat = models.OneToOneField(
         "app.Chat",
         primary_key=True,
-        null=True,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         db_column="chat_id",
     )
     is_notification = models.IntegerField(blank=True, null=True)
@@ -144,7 +143,7 @@ class ChatNotification(models.Model):
 
 
 class Contacts(models.Model):
-    m_id = models.TextField(primary_key=True, blank=True, null=True)
+    m_id = models.TextField(primary_key=True, blank=True)
     contact_id = models.TextField(blank=True, null=True)
     contact_key = models.TextField(blank=True, null=True)
     name = models.TextField(blank=True, null=True)
@@ -189,7 +188,7 @@ class Contacts(models.Model):
 
 
 class GroupHome(models.Model):
-    home_id = models.TextField(primary_key=True, blank=True, null=True)
+    home_id = models.TextField(primary_key=True, blank=True)
     mid = models.TextField(blank=True, null=True)
     is_group = models.IntegerField()
     is_note_newflag = models.IntegerField()
@@ -202,7 +201,7 @@ class GroupHome(models.Model):
 
 
 class Groups(models.Model):
-    id = models.TextField(primary_key=True, blank=True, null=True)
+    id = models.TextField(primary_key=True, blank=True)
     name = models.TextField(blank=True, null=True)
     picture_status = models.TextField(blank=True, null=True)
     creator = models.TextField(blank=True, null=True)
@@ -227,7 +226,7 @@ class Groups(models.Model):
 
 class Membership(models.Model):
     pk = models.CompositePrimaryKey("id", "m_id")
-    id = models.TextField(primary_key=True)
+    id = models.TextField()
     m_id = models.TextField()
     is_accepted = models.IntegerField()
     updated_time = models.IntegerField()
@@ -255,7 +254,7 @@ class MoreMenuItemStatus(models.Model):
 
 
 class MultipleImageMessageMapping(models.Model):
-    local_message_id = models.AutoField(primary_key=True, blank=True, null=True)
+    local_message_id = models.AutoField(primary_key=True, blank=True)
     group = models.ForeignKey(
         "app.Groups",
         null=True,
@@ -276,7 +275,7 @@ class MultipleImageMessageMapping(models.Model):
 
 
 class MyTheme(models.Model):
-    product_id = models.TextField(primary_key=True, blank=True, null=True)
+    product_id = models.TextField(primary_key=True, blank=True)
     # Field name made lowercase.
     ordernum = models.IntegerField(db_column="orderNum", blank=True, null=True)
     notified_expire_before_2week = models.IntegerField(blank=True, null=True)
@@ -288,7 +287,7 @@ class MyTheme(models.Model):
 
 
 class PermanentTasks(models.Model):
-    task_id = models.AutoField(primary_key=True, blank=True, null=True)
+    task_id = models.AutoField(primary_key=True, blank=True)
     type = models.IntegerField(blank=True, null=True)
     priority = models.IntegerField(blank=True, null=True)
     params = models.TextField(blank=True, null=True)
@@ -328,7 +327,7 @@ class Setting(models.Model):
 
 
 class Sticker(models.Model):
-    sticker_id = models.AutoField(primary_key=True, blank=True, null=True)
+    sticker_id = models.AutoField(primary_key=True, blank=True)
     package_id = models.IntegerField()
     order_num = models.IntegerField(blank=True, null=True)
     image_width = models.IntegerField(blank=True, null=True)
@@ -372,7 +371,7 @@ class StickerHistory(models.Model):
 
 
 class StickerPackage(models.Model):
-    package_id = models.AutoField(primary_key=True, blank=True, null=True)
+    package_id = models.AutoField(primary_key=True, blank=True)
     name = models.TextField(blank=True, null=True)
     version = models.IntegerField(blank=True, null=True)
     sticker_type = models.IntegerField(blank=True, null=True)
@@ -403,7 +402,7 @@ class StickerPackage(models.Model):
 
 
 class SticonPackages(models.Model):
-    sticon_pkg_id = models.AutoField(primary_key=True, blank=True, null=True)
+    sticon_pkg_id = models.AutoField(primary_key=True, blank=True)
     sticon_pkg_ver = models.IntegerField(blank=True, null=True)
     downloaded_sticon_pkg_ver = models.IntegerField(blank=True, null=True)
     meta_data_ver = models.IntegerField(blank=True, null=True)
@@ -434,7 +433,7 @@ class Sticons(models.Model):
 
 
 class Version(models.Model):
-    contact_id = models.TextField(primary_key=True, blank=True, null=True)
+    contact_id = models.TextField(primary_key=True, blank=True)
     version = models.IntegerField()
     synced_time = models.IntegerField()
 
