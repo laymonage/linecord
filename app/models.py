@@ -6,7 +6,10 @@
 #   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or field names.
 
+from datetime import datetime
 from django.db import models
+from django.db.models.functions import Cast
+from django.utils.functional import cached_property
 
 
 class AndroidMetadata(models.Model):
@@ -63,6 +66,29 @@ class Chat(models.Model):
         managed = False
         db_table = "chat"
 
+    @cached_property
+    def history(self):
+        created_time_int = Cast(
+            "created_time",
+            output_field=models.PositiveBigIntegerField(),
+        )
+        history = self.chat_history.annotate(created_time_int=created_time_int)
+        history = history.select_related("from_c")
+        history = history.order_by("created_time_int")
+        return history
+
+    @cached_property
+    def mid_lookup(self):
+        return {}
+
+    def get_mid_intish(self, mid):
+        try:
+            mid_intish = self.mid_lookup[mid]
+        except KeyError:
+            mid_intish = str(len(self.mid_lookup) + 1)
+            self.mid_lookup[mid] = mid_intish
+        return mid_intish
+
 
 class ChatHistory(models.Model):
     server_id = models.TextField(blank=True, null=True)
@@ -104,6 +130,46 @@ class ChatHistory(models.Model):
     class Meta:
         managed = False
         db_table = "chat_history"
+
+    @cached_property
+    def created_at(self):
+        if not self.created_time:
+            return None
+        return datetime.fromtimestamp(int(self.created_time) / 1000)
+
+    @cached_property
+    def is_from_self(self):
+        return self.from_c_id is None and self.status == 3  # ???
+
+    @cached_property
+    def author(self):
+        if self.from_c:
+            return self.from_c.to_discord(self.chat)
+        return {
+            "id": self.chat.get_mid_intish(self.from_c_id),
+            **Contacts.DEFAULT_DISCORD_PROFILES[
+                "self" if self.is_from_self else "unknown"
+            ],
+        }
+
+    def to_discord(self):
+        return {
+            # Use created_time as message ID to maintain order,
+            # as DCEF sorts by ID rather than timestamp
+            "id": self.created_time,
+            "type": "Default",
+            "timestamp": self.created_at.isoformat(),
+            "timestampEdited": None,
+            "callEndedTimestamp": None,
+            "isPinned": False,
+            "content": (self.content or "").strip(),
+            "author": self.author,
+            "attachments": [],
+            "embeds": [],
+            "stickers": [],
+            "reactions": [],
+            "mentions": [],
+        }
 
 
 class ChatMember(models.Model):
@@ -186,6 +252,48 @@ class Contacts(models.Model):
         managed = False
         db_table = "contacts"
 
+    @cached_property
+    def color(self):
+        # Generate color based on the last 6 characters of m_id
+        return f"#{self.m_id[-6:]}"
+
+    @cached_property
+    def avatar_url(self):
+        return self.picture_path
+
+    def to_discord(self, chat=None):
+        return {
+            "id": chat.get_mid_intish(self.m_id) if chat else 1,
+            "name": self.name,
+            "discriminator": "0000",
+            "nickname": self.custom_name,
+            "color": self.color,
+            "isBot": False,
+            "roles": [],
+            "avatarUrl": self.avatar_url,
+        }
+
+    DEFAULT_DISCORD_PROFILES = {
+        "self": {
+            "name": "sage",
+            "discriminator": "0000",
+            "nickname": "sage",
+            "color": "#84cff0",
+            "isBot": False,
+            "roles": [],
+            "avatarUrl": "",
+        },
+        "unknown": {
+            "name": "Unknown",
+            "discriminator": "0000",
+            "nickname": "Unknown",
+            "color": "#ffffff",
+            "isBot": False,
+            "roles": [],
+            "avatarUrl": "",
+        },
+    }
+
 
 class GroupHome(models.Model):
     home_id = models.TextField(primary_key=True, blank=True)
@@ -222,6 +330,45 @@ class Groups(models.Model):
     class Meta:
         managed = False
         db_table = "groups"
+
+    @cached_property
+    def icon_url(self):
+        return self.picture_status
+
+    @cached_property
+    def chat(self):
+        return Chat.objects.get(pk=self.pk)
+
+    def to_discord(self):
+        # Ensure unique timestamps. Not ideal, but DCEF sorts
+        # by ID rather than timestamp, so we use the timestamp as ID
+        # thus we need to ensure they are unique.
+        seen_timestamps = set()
+        messages = [
+            message.to_discord()
+            for message in self.chat.history
+            if message.created_time not in seen_timestamps
+            and not seen_timestamps.add(message.created_time)
+        ]
+        return {
+            "guild": {
+                "id": "1",  # must be int-ish
+                "name": self.name,
+                "iconUrl": self.icon_url,
+            },
+            "channel": {
+                "id": "2",
+                "type": "GuildTextChat",
+                "categoryId": "703931576941150228",  # ???
+                "category": "Text Channels",
+                "name": self.name,
+                "topic": None,
+            },
+            "dateRange": {"after": None, "before": None},
+            "exportedAt": datetime.now().isoformat(),
+            "messages": messages,
+            "messageCount": len(messages),
+        }
 
 
 class Membership(models.Model):
