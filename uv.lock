@@ -33,7 +33,7 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "django", specifier = ">=5.1.4" }]
+requires-dist = [{ name = "django", git = "https://github.com/django/django.git" }]
 
 [package.metadata.requires-dev]
 dev = [{ name = "ipython", specifier = ">=8.31.0" }]
@@ -58,16 +58,12 @@ wheels = [
 
 [[package]]
 name = "django"
-version = "5.1.4"
-source = { registry = "https://pypi.org/simple" }
+version = "5.2.dev20241220131810"
+source = { git = "https://github.com/django/django.git#fcd9d08379a2aee3b2c49eab0d0b8db6fd66d091" }
 dependencies = [
     { name = "asgiref" },
     { name = "sqlparse" },
     { name = "tzdata", marker = "sys_platform == 'win32'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/d3/e8/536555596dbb79f6e77418aeb40bdc1758c26725aba31919ba449e6d5e6a/Django-5.1.4.tar.gz", hash = "sha256:de450c09e91879fa5a307f696e57c851955c910a438a35e6b4c895e86bedc82a", size = 10716397 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/58/0b/8a4ab2c02982df4ed41e29f28f189459a7eba37899438e6bea7f39db793b/Django-5.1.4-py3-none-any.whl", hash = "sha256:236e023f021f5ce7dee5779de7b286565fdea5f4ab86bae5338e3f7b69896cf0", size = 8276471 },
 ]
 
 [[package]]
