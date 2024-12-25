@@ -20,8 +20,20 @@ class AndroidMetadata(models.Model):
 class Chat(models.Model):
     chat_id = models.TextField(primary_key=True, blank=True, null=True)
     chat_name = models.TextField(blank=True, null=True)
-    owner_mid = models.TextField(blank=True, null=True)
-    last_from_mid = models.TextField(blank=True, null=True)
+    owner = models.ForeignKey(
+        "app.Contacts",
+        null=True,
+        on_delete=models.SET_NULL,
+        db_column="owner_mid",
+        related_name="owned_chats",
+    )
+    last_from = models.ForeignKey(
+        "app.Contacts",
+        null=True,
+        on_delete=models.SET_NULL,
+        db_column="last_from_mid",
+        related_name="last_from_chats",
+    )
     last_message = models.TextField(blank=True, null=True)
     last_created_time = models.TextField(blank=True, null=True)
     message_count = models.IntegerField(blank=True, null=True)
@@ -55,8 +67,20 @@ class Chat(models.Model):
 class ChatHistory(models.Model):
     server_id = models.TextField(blank=True, null=True)
     type = models.IntegerField(blank=True, null=True)
-    chat_id = models.TextField(blank=True, null=True)
-    from_mid = models.TextField(blank=True, null=True)
+    chat = models.ForeignKey(
+        "app.Chat",
+        null=True,
+        on_delete=models.SET_NULL,
+        db_column="chat_id",
+        related_name="chat_history",
+    )
+    from_c = models.ForeignKey(
+        "app.Contacts",
+        null=True,
+        on_delete=models.SET_NULL,
+        db_column="from_mid",
+        related_name="chat_history",
+    )
     content = models.TextField(blank=True, null=True)
     created_time = models.TextField(blank=True, null=True)
     delivered_time = models.TextField(blank=True, null=True)
@@ -83,8 +107,18 @@ class ChatHistory(models.Model):
 
 
 class ChatMember(models.Model):
-    chat_id = models.TextField(blank=True, null=True)
-    mid = models.TextField(blank=True, null=True)
+    chat = models.ForeignKey(
+        "app.Chat",
+        null=True,
+        on_delete=models.SET_NULL,
+        db_column="chat_id",
+    )
+    contact = models.ForeignKey(
+        "app.Contacts",
+        null=True,
+        on_delete=models.SET_NULL,
+        db_column="mid",
+    )
     created_time = models.TextField(blank=True, null=True)
 
     class Meta:
@@ -94,7 +128,13 @@ class ChatMember(models.Model):
 
 
 class ChatNotification(models.Model):
-    chat_id = models.TextField(primary_key=True, blank=True, null=True)
+    chat = models.ForeignKey(
+        "app.Chat",
+        primary_key=True,
+        null=True,
+        on_delete=models.SET_NULL,
+        db_column="chat_id",
+    )
     is_notification = models.IntegerField(blank=True, null=True)
     is_groupcalling = models.IntegerField(blank=True, null=True)
 
@@ -186,7 +226,7 @@ class Groups(models.Model):
 
 
 class Membership(models.Model):
-    # The composite primary key (id, m_id) found, that is not supported. The first column is selected.
+    pk = models.CompositePrimaryKey("id", "m_id")
     id = models.TextField(primary_key=True)
     m_id = models.TextField()
     is_accepted = models.IntegerField()
@@ -216,9 +256,19 @@ class MoreMenuItemStatus(models.Model):
 
 class MultipleImageMessageMapping(models.Model):
     local_message_id = models.AutoField(primary_key=True, blank=True, null=True)
-    group_id = models.TextField(blank=True, null=True)
+    group = models.ForeignKey(
+        "app.Groups",
+        null=True,
+        on_delete=models.SET_NULL,
+        db_column="group_id",
+    )
     uploading_id = models.IntegerField(blank=True, null=True)
-    chat_id = models.TextField(blank=True, null=True)
+    chat = models.ForeignKey(
+        "app.Chat",
+        null=True,
+        on_delete=models.SET_NULL,
+        db_column="chat_id",
+    )
 
     class Meta:
         managed = False
@@ -254,7 +304,12 @@ class Reactions(models.Model):
     # The composite primary key (server_message_id, member_id) found, that is not supported. The first column is selected.
     server_message_id = models.AutoField(primary_key=True)
     member_id = models.TextField()
-    chat_id = models.TextField()
+    chat = models.ForeignKey(
+        "app.Chat",
+        null=True,
+        on_delete=models.SET_NULL,
+        db_column="chat_id",
+    )
     reaction_time_millis = models.IntegerField()
     reaction_type = models.TextField()
 
