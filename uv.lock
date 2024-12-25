@@ -20,7 +20,7 @@ wheels = [
 ]
 
 [[package]]
-name = "chatfky"
+name = "linecord"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
